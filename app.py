@@ -80,12 +80,21 @@ def compress_pdf(input_path, output_path, target_size_mb=None, quality=85, dpi=2
         if task_id:
             compression_tasks[task_id]['progress'] = 80
         
-        # If target size specified, adjust quality
+        # If target size specified, try to get as close as possible
         if target_size_mb:
             current_size = get_file_size_mb(output_path)
+            tolerance = target_size_mb * 0.05  # 5% tolerance
+            
+            # Too big - reduce quality
             if current_size > target_size_mb and quality > 50:
                 new_quality = int(quality * 0.9)
                 new_dpi = int(dpi * 0.95)
+                return compress_pdf(input_path, output_path, target_size_mb, new_quality, new_dpi, task_id)
+            
+            # Too small - increase quality to get closer to target
+            elif current_size < (target_size_mb - tolerance) and quality < 95 and dpi < 350:
+                new_quality = min(95, int(quality * 1.1))
+                new_dpi = min(350, int(dpi * 1.05))
                 return compress_pdf(input_path, output_path, target_size_mb, new_quality, new_dpi, task_id)
     
     finally:
@@ -117,8 +126,16 @@ def compress_image(input_path, output_path, target_size_mb=None, quality=85, tas
     
     if target_size_mb:
         current_size = get_file_size_mb(output_path)
+        tolerance = target_size_mb * 0.05  # 5% tolerance
+        
+        # Too big - reduce quality
         if current_size > target_size_mb and quality > 30:
             new_quality = int(quality * 0.85)
+            return compress_image(input_path, output_path, target_size_mb, new_quality, task_id)
+        
+        # Too small - increase quality to get closer to target
+        elif current_size < (target_size_mb - tolerance) and quality < 95:
+            new_quality = min(95, int(quality * 1.15))
             return compress_image(input_path, output_path, target_size_mb, new_quality, task_id)
     
     if task_id:
@@ -442,4 +459,5 @@ def preview(task_id):
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
