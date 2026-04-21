@@ -285,7 +285,7 @@ def index():
     history = []
     if 'username' in session and session['username'] in users:
         history = users[session['username']]['history'][-10:]  # Last 10 compressions
-    return render_template('index_enhanced.html', history=history)
+    return render_template('index.html', history=history)
 
 @app.route('/register', methods=['POST'])
 def register():
